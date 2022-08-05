@@ -40,8 +40,8 @@ const DishRow = ({ id, name, description, price, image }) => {
                                 borderWidth: 1,
                                 borderColor: '#F3F3F4'
                             }}
-                            // source={{ uri: image }}
-                            source={image}
+                            source={{ uri: image }}
+                            // source={image}
                             className='h-20 w-20 bg-gray-300 p-4'
                         />
                     </View>                

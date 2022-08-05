@@ -16,10 +16,10 @@ const RestrauntCard = ({ id, imgUrl, title, rating, genre, address, short_descri
             className='bg-white mr-3 shadow'
         >
             <Image 
-                // source={{
-                //     uri: imgUrl,
-                // }}
-                source={imgUrl}
+                source={{
+                    uri: imgUrl,
+                }}
+                // source={imgUrl}
                 className='h-36 w-64 rounded-sm'
             />
 

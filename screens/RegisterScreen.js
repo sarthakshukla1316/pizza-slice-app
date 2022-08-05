@@ -62,7 +62,7 @@ const RegisterScreen = (props) => {
                     <XIcon color="green" className='z-50' size={30} />
                 </TouchableOpacity>
                 <View className='flex-1 flex-col items-center justify-center -mt-32 bg-white relative'>
-                    <TouchableOpacity onPress={() => navigation.navigate('Home')} className='absolute top-[14%] left-5 bg-[#00CCBB] rounded-full'>
+                    <TouchableOpacity onPress={navigation.goBack} className='absolute top-[14%] left-5 bg-[#00CCBB] rounded-full'>
                         <XIcon color="white" className='z-999' size={36} />
                     </TouchableOpacity>
 

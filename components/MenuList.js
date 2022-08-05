@@ -13,7 +13,7 @@ const MenuList = () => {
 
                 {
                   items.slice(0,index).map(item => (
-                      <MenuCard key={items.id} item={item}
+                      <MenuCard key={item.id} item={item}
                       />
                   ))
                 }

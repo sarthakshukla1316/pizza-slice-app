@@ -1,6 +1,6 @@
 import { CardField, useStripe } from '@stripe/stripe-react-native';
 
-export default function PaymentCard({ setCardDetails }) {
+const PaymentCard = ({ setCard }) => {
   const { confirmPayment } = useStripe();
   console.log(confirmPayment);
 
@@ -17,11 +17,11 @@ export default function PaymentCard({ setCardDetails }) {
       style={{
         width: '100%',
         height: 50,
-        marginVertical: 30,
+        marginVertical: 10,
       }}
       onCardChange={(cardDetails) => {
         console.log('cardDetails', cardDetails);
-        setCardDetails(cardDetails);
+        setCard(cardDetails);
       }}
       onFocus={(focusedField) => {
         console.log('focusField', focusedField);
@@ -29,3 +29,6 @@ export default function PaymentCard({ setCardDetails }) {
     />
   );
 }
+
+
+export default PaymentCard;

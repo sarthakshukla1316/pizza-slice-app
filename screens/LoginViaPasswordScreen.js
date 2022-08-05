@@ -26,6 +26,7 @@ const LoginScreen = () => {
         try {
             const data = await loginWithPassword({ email, password });
             await SecureStore.setItemAsync('accessToken', data.accessToken);
+            await SecureStore.setItemAsync('refreshToken', data.refreshToken);
 
             console.log(await SecureStore.getItemAsync('accessToken'), 'added');
             dispatch(setAuth(data));

@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { XIcon } from 'react-native-heroicons/outline'
 import { useNavigation } from '@react-navigation/native'
 import { FancyAlert } from 'react-native-expo-fancy-alerts';
-import { login, sendOtp } from '../https/auth'
+import { login } from '../https/auth'
 import { useDispatch } from 'react-redux'
 import { setOtp } from '../features/authSlice'
 

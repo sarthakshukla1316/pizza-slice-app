@@ -1,16 +1,18 @@
 import { useNavigation, useRoute } from '@react-navigation/native'
-import React, { useEffect, useLayoutEffect } from 'react'
-import { View, Text, Image, ScrollView, TouchableOpacity } from 'react-native'
+import React, { useEffect, useLayoutEffect, useState } from 'react'
+import { View, Text, Image, ScrollView, TouchableOpacity, TextInput } from 'react-native'
 import { ArrowLeftIcon, ChevronRightIcon, LocationMarkerIcon, QuestionMarkCircleIcon, StarIcon } from 'react-native-heroicons/outline';
 import BasketIcon from '../components/BasketIcon';
 import DishRow from '../components/DishRow';
 import { useDispatch } from 'react-redux';
 import { setRestraunt } from '../features/restrauntSlice';
-import foods from '../menus';
+import { fetchItems } from '../https/menu';
 
 const RestrauntScreen = () => {
     const navigation = useNavigation();
     const dispatch = useDispatch();
+    const [items, setItems] = useState([]);
+    const [searchVal, setSearchVal] = useState('');
     const { params: { id, imgUrl, title, rating, genre, address, short_description, dishes, long, lat }} = useRoute();
 
     useLayoutEffect(() => {
@@ -23,6 +25,17 @@ const RestrauntScreen = () => {
         dispatch(setRestraunt({ id, imgUrl, title, rating, genre, address, short_description, dishes, long, lat, }));
     }, []);
     
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const data = await fetchItems();
+                setItems(data);
+            } catch(err) {
+                console.log(err);
+            }
+        }
+        fetchData();
+    }, []);
 
     return (
         <>
@@ -31,10 +44,10 @@ const RestrauntScreen = () => {
             <ScrollView>
                 <View className='relative'>
                     <Image 
-                        // source={{
-                        //     uri: imgUrl
-                        // }}
-                        source={imgUrl}
+                        source={{
+                            uri: imgUrl
+                        }}
+                        // source={imgUrl}
                         className='w-full h-56 bg-gray-300 p-4'
                     />
                     <TouchableOpacity onPress={navigation.goBack} className='absolute top-14 left-5 p-2 bg-gray-100 rounded-full'>
@@ -72,9 +85,11 @@ const RestrauntScreen = () => {
                 <View className='pb-36'>
                     <Text className='px-4 pt-6 mb-3 font-bold text-xl'>Menu</Text>
 
+                    <TextInput onChangeText={(val) => setSearchVal(val)} defaultValue={searchVal} placeholder='Search items...' className='h-12 w-[100%] border border-gray-400 bg-white text-[20px] px-4 my-3 py-0' keyboardType='default' maxLength={50} />
+
                     {
-                        foods.map(food => (
-                            <DishRow key={food.id} id={food.id} name={food.name} description="Delicious pieces" price={food.price} image={food.image} />
+                        items?.filter(item => item.name.toLowerCase().includes(searchVal.toLowerCase())).map(item => (
+                            <DishRow key={item.id} id={item.id} name={item.name} description="Delicious pieces" price={item.price} image={item.image} />
                         ))
                     }
                     

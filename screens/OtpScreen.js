@@ -29,6 +29,7 @@ const OtpScreen = (props) => {
             const data= await verifyOtp({ email, otp, hash });
             console.log(data, 'data');
             await SecureStore.setItemAsync('accessToken', data.accessToken);
+            await SecureStore.setItemAsync('refreshToken', data.refreshToken);
 
             console.log(await SecureStore.getItemAsync('accessToken'), 'added');
             dispatch(setAuth(data));

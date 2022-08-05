@@ -15,6 +15,8 @@ import LoginScreen from "./screens/LoginScreen";
 import { InAppNotificationProvider } from 'react-native-in-app-notification';
 import OtpScreen from "./screens/OtpScreen";
 import LoginViaPasswordScreen from "./screens/LoginViaPasswordScreen";
+import CheckoutScreen from "./screens/CheckoutScreen";
+import OrderScreen from "./screens/OrderScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -35,6 +37,7 @@ export default function App() {
         console.log(error);
     })
   }, []);
+
 
   return (
     <NavigationContainer>
@@ -63,6 +66,12 @@ export default function App() {
                 options={{ presentation: 'fullScreenModal', headerShown: false }}
               />
               <Stack.Screen name="LoginViaPassword" component={LoginViaPasswordScreen} 
+                options={{ presentation: 'fullScreenModal', headerShown: false }}
+              />
+              <Stack.Screen name="Checkout" component={CheckoutScreen} 
+                options={{ presentation: 'fullScreenModal', headerShown: false }}
+              />
+              <Stack.Screen name="Order" component={OrderScreen} 
                 options={{ presentation: 'fullScreenModal', headerShown: false }}
               />
             </Stack.Navigator>

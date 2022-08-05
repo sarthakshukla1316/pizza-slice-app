@@ -1,26 +1,25 @@
 import { useNavigation } from '@react-navigation/native'
 import React, { useMemo, useState } from 'react'
-import { View, Text, TouchableOpacity, Image, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, Image, ScrollView, TextInput } from 'react-native';
 import { XCircleIcon } from 'react-native-heroicons/outline';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector, useDispatch } from 'react-redux';
 import { removeFromBasket, selectBasketItems, selectBasketTotal } from '../features/basketSlice';
 import { selectRestraunt } from '../features/restrauntSlice';
 import Currency from 'react-currency-formatter'
-import { StripeProvider } from '@stripe/stripe-react-native';
-import PaymentCard from '../components/PaymentCard';
-import { order } from '../https/order';
+import { sendOrderOtp } from '../https/order';
+import * as SecureStore from 'expo-secure-store';
+import { withInAppNotification } from 'react-native-in-app-notification';
 
-
-const BasketScreen = () => {
+const BasketScreen = (props) => {
     const navigation = useNavigation();
     const dispatch = useDispatch();
     const restraunt = useSelector(selectRestraunt);
     const items = useSelector(selectBasketItems);
     const basketTotal = useSelector(selectBasketTotal);
+    const [phone, setPhone] = useState('');
 
     const [groupedItemsInBasket, setgroupedItemsInBasket] = useState([]);
-    const [cardDetails, setCardDetails] = useState({});
 
     useMemo(() => {
         const groupedItems = items.reduce((results, item) => {
@@ -33,10 +32,29 @@ const BasketScreen = () => {
 
     const handleCheckout = async () => {
         try {
-            const { data } = await order();
-            console.log(data, 'order');
+            const accessToken = await SecureStore.getItemAsync('accessToken');
+            if(!accessToken) {
+                props.showNotification({
+                    message: 'Please Sign In to order !!',
+                    additionalProps: { type: 'error' },
+                });
+                return;
+            }
+            if(!phone) {
+                props.showNotification({
+                    message: 'Please enter phone number !!',
+                    additionalProps: { type: 'error' },
+                });
+                return;
+            }
+            const data = await sendOrderOtp({ phone, accessToken });
+            console.log(data, 'order otp');
+
+            navigation.navigate('Checkout', {
+                phone, orders: groupedItemsInBasket, order_id: data.order_id, price: basketTotal <= 300 ? basketTotal+40 : basketTotal
+            });
         } catch(err) {
-            console.log(err);
+            console.log(err?.response?.data?.message);
         }
     }
 
@@ -57,16 +75,25 @@ const BasketScreen = () => {
                     </TouchableOpacity>
                 </View>
 
-                <View className='flex-row items-center space-x-4 px-4 py-3 bg-white my-5'>
-                    <Image 
-                        source={{ uri: 'https://links.papareact.com/wru' }}
-                        className='h-7 w-7 bg-gray-300 p-4 rounded-full'
-                    />
-                    <Text className='flex-1'>Deliver in 40-45 min</Text>
-                    <TouchableOpacity>
-                        <Text className='text-[#00CCBB]'>Change</Text>
-                    </TouchableOpacity>
-                </View>
+                {
+                    basketTotal > 0 ? (
+                        <View className='flex-row items-center space-x-4 px-4 py-3 bg-white my-5'>
+                            <Image 
+                                source={{ uri: 'https://links.papareact.com/wru' }}
+                                className='h-7 w-7 bg-gray-300 p-4 rounded-full'
+                            />
+                            <Text className='flex-1'>Deliver in 40-45 min</Text>
+                            <TouchableOpacity>
+                                <Text className='text-[#00CCBB]'>Change</Text>
+                            </TouchableOpacity>
+                        </View>
+                    ) : (
+                        <View className=''>
+                            <Text className='text-3xl font-semibold text-center mt-16 text-gray-700'>Empty Basket</Text>
+                            <Text className='text-lg font-semibold text-center mt-4 text-gray-500'>You probably haven't ordered any food yet. To order a food, go to the home page.</Text>
+                        </View>
+                    )
+                }
 
                 <ScrollView className='divide-y divide-gray-200'>
                     {
@@ -74,8 +101,8 @@ const BasketScreen = () => {
                             <View key={key} className='flex-row items-center space-x-3 bg-white py-2 px-5'>
                                 <Text className='text-[#00CCBB]'>{items.length} x</Text>
                                 <Image 
-                                    // source={{ uri: items[0]?.image }}
-                                    source={items[0].image}
+                                    source={{ uri: items[0]?.image }}
+                                    // source={items[0].image}
                                     className='h-12 w-12 rounded-full'
                                 />
                                 <Text className='flex-1'>{items[0]?.name}</Text>
@@ -97,54 +124,58 @@ const BasketScreen = () => {
                     }
                 </ScrollView>
 
-                <View className='p-5 bg-white mt-5 space-y-4'>
-                    <View className='flex-row justify-between'>
-                        <Text className='text-gray-400'>SubTotal</Text>
-                        <Text className='text-gray-400'>
-                            <Currency quantity={basketTotal} currency="INR" />
-                        </Text>
-                    </View>
+                {
+                    basketTotal > 0 ? (
+                        <View className='p-5 bg-white mt-5 space-y-4'>
+                            <View className='flex-row justify-between'>
+                                <Text className='text-gray-400'>SubTotal</Text>
+                                <Text className='text-gray-400'>
+                                    <Currency quantity={basketTotal} currency="INR" />
+                                </Text>
+                            </View>
 
-                    <View className='flex-row justify-between'>
-                        <Text className='text-gray-400'>Delivery Fee</Text>
-                        <Text className='text-gray-400'>
-                            <Currency quantity={40} currency="INR" />
-                        </Text>
-                    </View>
+                            <View className='flex-row justify-between'>
+                                <Text className='text-gray-400'>Delivery Fee</Text>
+                                <View className='mr-2'>
+                                    <Text className={`text-gray-400 ${basketTotal > 300 && 'line-through text-red-500'}`}>
+                                        <Currency quantity={40} currency="INR" />
+                                    </Text>
+                                    {basketTotal > 300 && <Text className='text-green-600'>FREE</Text>}
+                                </View>
+                            </View>
 
-                    <View className='flex-row justify-between'>
-                        <Text className='text-lg text-gray-700'>Order Total</Text>
-                        <Text className='font-extrabold'>
-                            <Currency quantity={basketTotal <= 300 ? basketTotal + 40 : basketTotal} currency="INR" />
-                        </Text>
-                    </View>
+                            <View className='flex-row justify-between items-center'>
+                                <Text className='text-lg text-gray-700'>Order Total</Text>
+                                <Text className='font-bold text-lg text-gray-800'>
+                                    <Currency quantity={basketTotal <= 300 ? basketTotal + 40 : basketTotal} currency="INR" />
+                                </Text>
+                            </View>
 
-                    {
-                        basketTotal > 0 ? 
-                        <TouchableOpacity onPress={() => navigation.navigate('PreparingOrderScreen')} className='rounded-lg bg-[#00CCBB] p-3'>
-                            <Text className='text-center text-white text-lg font-bold'>Place Order</Text>
-                        </TouchableOpacity> 
-                        : 
-                        <TouchableOpacity disabled={true} style={{ opacity: 0.3 }} className='rounded-lg bg-[#00CCBB] p-3'>
-                            <Text className='text-center text-white text-lg font-bold'>Place Order</Text>
-                        </TouchableOpacity>
-                    }
+                            <View className=''>
+                                <Text className='text-[17px] mt-4 text-green-700'>Enter phone number to receive order verification otp</Text>
+                                <TextInput onChangeText={val => setPhone(val)} defaultValue={phone} placeholder='Enter your phone number' className='h-10 w-72 border mt-3 border-gray-400 text-lg px-4 py-0' keyboardType='phone-pad' maxLength={10} />
+                            </View>
 
-                    <StripeProvider
-                        publishableKey={'pk_test_51JJdXiSFC2ysPpAcbFr2KjooBXuMHHzexqTBU93DDd4xncUSMMVJzuWkr4gjtSYWulK7n2qlFZ1EH1LGbiX10kox00YIBvtTgq'}
-                        merchantIdentifier="merchant.identifier"
-                    >
-                        <PaymentCard setCardDetails={setCardDetails} />
-                    </StripeProvider>
-
-                    <TouchableOpacity onPress={() => handleCheckout()} className='rounded-lg bg-[#00CCBB] p-3'>
-                        <Text className='text-center text-white text-lg font-bold'>Checkout</Text>
-                    </TouchableOpacity> 
-                    
-                </View>
+                            <TouchableOpacity onPress={() => handleCheckout()} className='rounded-lg bg-[#00CCBB] p-3'>
+                                <Text className='text-center text-white text-lg font-bold'>Proceed to Checkout</Text>
+                            </TouchableOpacity>
+                            
+                        </View>
+                    ) : (
+                        <ScrollView className='-mt-16 ml-16'>
+                            <Image
+                                source={require('../assets/empty-cart.png')}
+                                className='h-56 w-56'
+                            />
+                            <TouchableOpacity onPress={() => navigation.navigate('Home')} className='rounded-lg bg-[#00CCBB] p-3 mt-8 mr-16'>
+                                <Text className='text-center text-white text-lg font-bold'>Add Items</Text>
+                            </TouchableOpacity> 
+                        </ScrollView>
+                    )
+                }
             </View>
         </SafeAreaView>
     )
 }
 
-export default BasketScreen
+export default withInAppNotification(BasketScreen)
